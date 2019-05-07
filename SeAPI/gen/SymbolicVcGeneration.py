@@ -253,12 +253,23 @@ class SymbolicVcGeneration(PlSqlVisitor):
 
     def getSetClause(self, NodeId, ctx):
         child = ctx.getChildCount()
+        tempres = []
+        res = ""
         for i in range(child):
             if self.helper.getRuleName(ctx.children[i]) == "column_based_update_set_clause":
-                print("")
-        #print(child)
-        #input("wait")
-        res = self.getColsetClause(NodeId, ctx.children[1])
+                tempres.append(self.getVersionedTerminalLHS(NodeId, ctx.children[i].children[0]) +' == '+ \
+                self.getVersionedTerminalRHS(NodeId, ctx.children[i].children[2]))
+                #print("testing")
+                #input("wait")
+
+        l = len(tempres)
+        #for i in range(2)
+        if l>1:
+            res = res + "And(" + tempres[0] + ", " + tempres[1] + ")"
+            for i in tempres[2:]:
+                res = "And("+res+ ", " +i+")"
+        else:
+            res = self.getColsetClause(NodeId, ctx.children[1])
         return res
 
     def getColsetClause(self, nodeId, ctx):
@@ -266,8 +277,25 @@ class SymbolicVcGeneration(PlSqlVisitor):
               self.getVersionedTerminalRHS(nodeId, ctx.children[2])
         return res
     
-    def getNotSetClause(self, nodeId, ctx):
-        res = self.getNotColsetClause(nodeId, ctx.children[1])
+    def getNotSetClause(self, NodeId, ctx):
+        child = ctx.getChildCount()
+        tempres = []
+        res = ""
+        for i in range(child):
+            if self.helper.getRuleName(ctx.children[i]) == "column_based_update_set_clause":
+                tempres.append(self.getVersionedTerminalLHS(NodeId, ctx.children[i].children[0]) + ' == ' + \
+                               self.getVersionedTerminalRHS(NodeId, ctx.children[i].children[0]))
+                # print("testing")
+                # input("wait")
+
+        l = len(tempres)
+        # for i in range(2)
+        if l > 1:
+            res = res + "And(" + tempres[0] + ", " + tempres[1] + ")"
+            for i in tempres[2:]:
+                res = "And(" + res + ", " + i + ")"
+        else:
+            res = self.getNotColsetClause(NodeId, ctx.children[1])
         return res
 
     def getNotColsetClause(self, nodeId, ctx):
